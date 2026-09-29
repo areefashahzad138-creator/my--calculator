@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Calculator</title>
+    <style>
+      :root {
+        --bg: #0f1419;
+        --panel: #1a222c;
+        --display: #121920;
+        --text: #f4f7fb;
+        --muted: #8b98a8;
+        --btn: #243040;
+        --btn-hover: #2e3d50;
+        --op: #2d6cdf;
+        --op-hover: #3b7cf0;
+        --equals: #21a179;
+        --equals-hover: #27b888;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #1e2a3a, var(--bg) 55%);
+        color: var(--text);
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+      }
+
+      .calculator {
+        width: min(100%, 360px);
+        background: var(--panel);
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .title {
+        margin: 0 0 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .display {
+        background: var(--display);
+        border-radius: 16px;
+        padding: 16px 18px 12px;
+        margin-bottom: 16px;
+        min-height: 92px;
+        text-align: right;
+      }
+
+      .expression {
+        min-height: 1.2em;
+        color: var(--muted);
+        font-size: 0.9rem;
+        word-break: break-all;
+      }
+
+      .value {
+        display: block;
+        width: 100%;
+        margin-top: 4px;
+        font-size: 2.4rem;
+        font-weight: 650;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+
+      .keypad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 14px;
+        min-height: 58px;
+        background: var(--btn);
+        color: var(--text);
+        font: inherit;
+        font-size: 1.25rem;
+        cursor: pointer;
+        transition: background 0.12s ease, transform 0.08s ease;
+      }
+
+      button:hover {
+        background: var(--btn-hover);
+      }
+
+      button:active {
+        transform: scale(0.97);
+      }
+
+      button:focus-visible {
+        outline: 2px solid #7eb1ff;
+        outline-offset: 2px;
+      }
+
+      .op {
+        background: var(--op);
+      }
+
+      .op:hover,
+      .op.active {
+        background: var(--op-hover);
+      }
+
+      .equals {
+        background: var(--equals);
+      }
+
+      .equals:hover {
+        background: var(--equals-hover);
+      }
+
+      button[data-action="clear"] {
+        color: #ffd0d0;
+      }
+
+      .span-2 {
+        grid-column: span 2;
+      }
+
+      .hint {
+        margin: 14px 2px 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 400px) {
+        .value {
+          font-size: 2rem;
+        }
+
+        button {
+          min-height: 52px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="calculator" aria-label="Calculator">
+        <h1 class="title">Calculator</h1>
+        <div class="display" role="status" aria-live="polite">
+          <div class="expression" id="expression" aria-hidden="true"></div>
+          <output class="value" id="display" for="keypad">0</output>
+        </div>
+        <div class="keypad" id="keypad">
+          <button type="button" data-action="clear">AC</button>
+          <button type="button" data-action="backspace" aria-label="Backspace">⌫</button>
+          <button type="button" data-action="percent" aria-label="Percent">%</button>
+          <button type="button" class="op" data-action="operator" data-operator="÷" aria-label="Divide">÷</button>
+
+          <button type="button" data-digit="7">7</button>
+          <button type="button" data-digit="8">8</button>
+          <button type="button" data-digit="9">9</button>
+          <button type="button" class="op" data-action="operator" data-operator="×" aria-label="Multiply">×</button>
+
+          <button type="button" data-digit="4">4</button>
+          <button type="button" data-digit="5">5</button>
+          <button type="button" data-digit="6">6</button>
+          <button type="button" class="op" data-action="operator" data-operator="−" aria-label="Subtract">−</button>
+
+          <button type="button" data-digit="1">1</button>
+          <button type="button" data-digit="2">2</button>
+          <button type="button" data-digit="3">3</button>
+          <button type="button" class="op" data-action="operator" data-operator="+" aria-label="Add">+</button>
+
+          <button type="button" class="span-2" data-digit="0">0</button>
+          <button type="button" data-action="decimal" aria-label="Decimal point">.</button>
+          <button type="button" class="equals" data-action="equals" aria-label="Equals">=</button>
+        </div>
+        <p class="hint">Keyboard: numbers, + − * /, Enter, Backspace, Escape</p>
+      </section>
+    </main>
+    <script>
+      const displayEl = document.getElementById("display");
+      const expressionEl = document.getElementById("expression");
+      const keypad = document.getElementById("keypad");
+
+      const MAX_DIGITS = 14;
+
+      const state = {
+        current: "0",
+        stored: null,
+        operator: null,
+        overwrite: false,
+        error: false,
+      };
+
+      function formatNumber(value) {
+        if (!Number.isFinite(value)) return "Error";
+        const asString = String(value);
+        if (asString.includes("e")) {
+          return value.toPrecision(10).replace(/\.?0+$/, "");
+        }
+        const [intPart, fracPart] = asString.split(".");
+        const grouped = Number(intPart).toLocaleString("en-US");
+        return fracPart === undefined ? grouped : `${grouped}.${fracPart}`;
+      }
+
+      function parseDisplay(text) {
+        return Number(text.replace(/,/g, ""));
+      }
+
+      function currentNumber() {
+        return parseDisplay(state.current);
+      }
+
+      function roundResult(value) {
+        if (!Number.isFinite(value)) return value;
+        return Number(value.toPrecision(12));
+      }
+
+      function compute(a, operator, b) {
+        switch (operator) {
+          case "+":
+            return roundResult(a + b);
+          case "−":
+            return roundResult(a - b);
+          case "×":
+            return roundResult(a * b);
+          case "÷":
+            return b === 0 ? NaN : roundResult(a / b);
+          default:
+            return b;
+        }
+      }
+
+      function render() {
+        displayEl.textContent = state.current;
+        if (state.error) {
+          expressionEl.textContent = "";
+          return;
+        }
+        if (state.operator && state.stored !== null) {
+          const right = state.overwrite ? "" : ` ${state.current}`;
+          expressionEl.textContent = `${formatNumber(state.stored)} ${state.operator}${right}`;
+        } else {
+          expressionEl.textContent = "";
+        }
+
+        keypad.querySelectorAll(".op").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.operator === state.operator && state.overwrite);
+        });
+      }
+
+      function reset(message = "0") {
+        state.current = message;
+        state.stored = null;
+        state.operator = null;
+        state.overwrite = false;
+        state.error = message === "Error";
+      }
+
+      function inputDigit(digit) {
+        if (state.error) reset();
+
+        if (state.overwrite) {
+          state.current = digit;
+          state.overwrite = false;
+          return;
+        }
+
+        const raw = state.current.replace(/,/g, "");
+        const digits = raw.replace(".", "").replace("-", "");
+        if (digits.length >= MAX_DIGITS) return;
+
+        if (raw === "0") {
+          state.current = digit;
+        } else if (raw === "-0") {
+          state.current = `-${digit}`;
+        } else {
+          state.current = formatNumber(Number(`${raw}${digit}`));
+          if (raw.includes(".")) {
+            const frac = raw.split(".")[1] + digit;
+            const intFormatted = formatNumber(Number(raw.split(".")[0]));
+            state.current = `${intFormatted}.${frac}`;
+          }
+        }
+      }
+
+      function inputDecimal() {
+        if (state.error) reset();
+        if (state.overwrite) {
+          state.current = "0.";
+          state.overwrite = false;
+          return;
+        }
+        if (!state.current.includes(".")) {
+          state.current += ".";
+        }
+      }
+
+      function setOperator(operator) {
+        if (state.error) return;
+
+        const value = currentNumber();
+        if (state.stored !== null && state.operator && !state.overwrite) {
+          const result = compute(state.stored, state.operator, value);
+          if (!Number.isFinite(result)) {
+            reset("Error");
+            render();
+            return;
+          }
+          state.stored = result;
+          state.current = formatNumber(result);
+        } else {
+          state.stored = value;
+        }
+
+        state.operator = operator;
+        state.overwrite = true;
+      }
+
+      function equals() {
+        if (state.error || state.operator === null || state.stored === null) return;
+        const result = compute(state.stored, state.operator, currentNumber());
+        if (!Number.isFinite(result)) {
+          reset("Error");
+          render();
+          return;
+        }
+        state.current = formatNumber(result);
+        state.stored = null;
+        state.operator = null;
+        state.overwrite = true;
+      }
+
+      function percent() {
+        if (state.error) return;
+        const value = currentNumber() / 100;
+        state.current = formatNumber(value);
+        state.overwrite = true;
+      }
+
+      function backspace() {
+        if (state.error) {
+          reset();
+          return;
+        }
+        if (state.overwrite) return;
+        const raw = state.current.replace(/,/g, "");
+        if (raw.length <= 1 || raw === "-0" || (raw.startsWith("-") && raw.length === 2)) {
+          state.current = "0";
+          return;
+        }
+        const next = raw.slice(0, -1);
+        if (next.endsWith(".")) {
+          state.current = `${formatNumber(Number(next.slice(0, -1)))}.`;
+        } else {
+          state.current = next.includes(".")
+            ? `${formatNumber(Number(next.split(".")[0]))}.${next.split(".")[1]}`
+            : formatNumber(Number(next));
+        }
+      }
+
+      keypad.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+
+        if (button.dataset.digit !== undefined) inputDigit(button.dataset.digit);
+        else if (button.dataset.action === "decimal") inputDecimal();
+        else if (button.dataset.action === "operator") setOperator(button.dataset.operator);
+        else if (button.dataset.action === "equals") equals();
+        else if (button.dataset.action === "clear") reset();
+        else if (button.dataset.action === "backspace") backspace();
+        else if (button.dataset.action === "percent") percent();
+
+        render();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const key = event.key;
+        if (key >= "0" && key <= "9") {
+          inputDigit(key);
+        } else if (key === ".") {
+          inputDecimal();
+        } else if (key === "+") {
+          setOperator("+");
+        } else if (key === "-") {
+          setOperator("−");
+        } else if (key === "*") {
+          setOperator("×");
+        } else if (key === "/") {
+          event.preventDefault();
+          setOperator("÷");
+        } else if (key === "Enter" || key === "=") {
+          event.preventDefault();
+          equals();
+        } else if (key === "Backspace") {
+          backspace();
+        } else if (key === "Escape") {
+          reset();
+        } else if (key === "%") {
+          percent();
+        } else {
+          return;
+        }
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
